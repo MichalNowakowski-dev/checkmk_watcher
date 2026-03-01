@@ -1,6 +1,7 @@
 import { chromium } from "playwright";
 import axios from "axios";
 import { CONFIG } from "./config.js";
+import "dotenv/config";
 
 const PROFILE_DIR = "./checkmk-profile";
 
