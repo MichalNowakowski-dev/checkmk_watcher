@@ -95,6 +95,8 @@ function parseDowntimeToMinutes(downtimeStr) {
         ` ########## 🔍 Sprawdzenie  o godzinie: ${nowFormatted} Liczba CRIT'ów: ${crits + critsPKO} ##########`,
       );
 
+      console.log("Pobieram dane z DB o wyjątkach (exceptions)...");
+
       const db_exceptions_hosts = await pool.query(`
   SELECT *
   FROM exceptions
