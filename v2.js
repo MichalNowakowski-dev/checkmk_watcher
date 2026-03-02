@@ -100,7 +100,8 @@ function parseDowntimeToMinutes(downtimeStr) {
       const db_exceptions = await pool.query(`SELECT * FROM exceptions`);
       const exceptions = db_exceptions.rows;
 
-      // [ { host: 'dev', service: '' }, { host: '', service: 'filesystem' }, { host: 'dev', service: 'filesystem' } ]
+      const db_rules = await pool.query(`SELECT * FROM alert_rules`);
+      const alertRules = db_rules.rows;
 
       const hostOnly = exceptions.filter((r) => r.host && !r.service);
       const serviceOnly = exceptions.filter((r) => !r.host && r.service);
@@ -154,14 +155,20 @@ function parseDowntimeToMinutes(downtimeStr) {
           )
         ) {
           continue;
-        } else if (
-          (serviceName.includes("Memory") ||
-            serviceName.includes("CPU") ||
-            serviceName.includes("Number of threads") ||
-            serviceName.includes("MSSQL Connections")) &&
-          downtimeMin >= CONFIG.downTimeMinutes &&
-          downtimeMin < CONFIG.downTimeMaxMinutes
-        ) {
+        }
+
+        const matchedRule = alertRules.find((r) =>
+          serviceName.includes(r.service_pattern),
+        );
+
+        if (!matchedRule) continue; // brak reguły = pomijamy
+
+        const minOk = downtimeMin >= matchedRule.min_downtime;
+        const maxOk =
+          matchedRule.max_downtime === 0 ||
+          downtimeMin < matchedRule.max_downtime;
+
+        if (minOk && maxOk) {
           console.log(
             `🚨SLACK ALERT >= ${nowFormatted}: ${hostname} / ${serviceName} / ${downTime}`,
           );
@@ -174,115 +181,7 @@ function parseDowntimeToMinutes(downtimeStr) {
             downTime,
             hostnameLink,
             serviceLink,
-            info: CONFIG.info,
-          });
-        } else if (serviceName.includes("Filesystem") && downtimeMin < 180) {
-          console.log(
-            `🚨SLACK ALERT >= ${nowFormatted}: ${hostname} / ${serviceName} / ${downTime}`,
-          );
-
-          await axios.post(CONFIG.slackUrl, {
-            hostname,
-            ipv4,
-            serviceName,
-            summary,
-            downTime,
-            hostnameLink,
-            serviceLink,
-          });
-        } else if (
-          (serviceName.includes("Check_MK") || serviceName.includes("tunel")) &&
-          downtimeMin >= 10
-        ) {
-          console.log(
-            `🚨SLACK ALERT >= ${nowFormatted}: ${hostname} / ${serviceName} / ${downTime}`,
-          );
-
-          await axios.post(CONFIG.slackUrl, {
-            hostname,
-            ipv4,
-            serviceName,
-            summary,
-            downTime,
-            hostnameLink,
-            serviceLink,
-          });
-        } else if (serviceName.includes("SYNCTHING") && downtimeMin >= 180) {
-          console.log(
-            `🚨SLACK ALERT >= ${nowFormatted}: ${hostname} / ${serviceName} / ${downTime}`,
-          );
-
-          await axios.post(CONFIG.slackUrl, {
-            hostname,
-            ipv4,
-            serviceName,
-            summary,
-            downTime,
-            hostnameLink,
-            serviceLink,
-          });
-        } else if (
-          (serviceName.includes("DOMAIN-ACCESS") ||
-            serviceName.includes("elastic_health") ||
-            serviceName.includes("MSSQL Blocked Sessions") ||
-            serviceName.includes("conntrack_table_usage") ||
-            serviceName.includes("Interface")) &&
-          downtimeMin >= 15 &&
-          downtimeMin <= CONFIG.downTimeMaxMinutes
-        ) {
-          console.log(
-            `🚨SLACK ALERT >= ${nowFormatted}: ${hostname} / ${serviceName} / ${downTime}`,
-          );
-
-          await axios.post(CONFIG.slackUrl, {
-            hostname,
-            ipv4,
-            serviceName,
-            summary,
-            downTime,
-            hostnameLink,
-            serviceLink,
-          });
-        } else if (
-          (serviceName.includes("database-backup") ||
-            serviceName.includes("Postgresql_repl_lag") ||
-            serviceName.includes("Systemd Socket Summary") ||
-            serviceName.includes("SNMP Info")) &&
-          downtimeMin >= 60
-        ) {
-          console.log(
-            `🚨SLACK ALERT >= ${nowFormatted}: ${hostname} / ${serviceName} / ${downTime}`,
-          );
-
-          await axios.post(CONFIG.slackUrl, {
-            hostname,
-            ipv4,
-            serviceName,
-            summary,
-            downTime,
-            hostnameLink,
-            serviceLink,
-          });
-        } else if (
-          (serviceName.includes("x509") ||
-            serviceName.includes("ssl_check") ||
-            serviceName.includes("Process") ||
-            serviceName.includes("pfSense")) &&
-          downtimeMin >= CONFIG.downTimeMinutes &&
-          downtimeMin < CONFIG.downTimeMaxMinutes
-        ) {
-          console.log(
-            `🚨SLACK ALERT >= ${nowFormatted}: ${hostname} / ${serviceName} / ${downTime}`,
-          );
-
-          await axios.post(CONFIG.slackUrl, {
-            hostname,
-            ipv4,
-            serviceName,
-            summary,
-            downTime,
-            hostnameLink,
-            serviceLink,
+            ...(matchedRule.send_info && { info: CONFIG.info }),
           });
         }
       }
