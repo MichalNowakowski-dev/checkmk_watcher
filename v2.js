@@ -70,17 +70,7 @@ function parseDowntimeToMinutes(downtimeStr) {
       minute: "2-digit",
     });
 
-    async function getExceptions() {
-      try {
-        const result = await pool.query("SELECT * FROM exceptions");
-        console.log(result.rows);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-
     try {
-      getExceptions();
       const dashletLocator = page
         .frameLocator('iframe[name="main"]')
         .frameLocator("iframe#dashlet_iframe_0");
@@ -103,6 +93,25 @@ function parseDowntimeToMinutes(downtimeStr) {
       const critsPKO = await critRowsPKO.count();
       console.log(
         ` ########## 🔍 Sprawdzenie  o godzinie: ${nowFormatted} Liczba CRIT'ów: ${crits + critsPKO} ##########`,
+      );
+
+      const db_exceptions_hosts = await pool.query(`
+  SELECT *
+  FROM exceptions
+  WHERE host IS NOT NULL
+    AND host <> ''
+`);
+      const exceptionHosts = db_exceptions_hosts.rows.map((r) => r.host);
+
+      const db_exceptions_services = await pool.query(`
+  SELECT *
+  FROM exceptions
+  WHERE service IS NOT NULL
+  AND service <> ''
+  `);
+
+      const exceptionServices = db_exceptions_services.rows.map(
+        (r) => r.service,
       );
 
       for (let i = 0; i < crits; i++) {
@@ -140,11 +149,14 @@ function parseDowntimeToMinutes(downtimeStr) {
         // 2. Czas awarii ponizej 'CONFIG.downTimeMaxMinutes'
         // 3. Hostname nie zawiera dev, test, tst, k8S-d0 w nazwie
 
+        //         hostname.includes("dev") ||
+        // hostname.includes("test") ||
+        // hostname.includes("tst") ||
+        // hostname.includes("k8S-d0")
+
         if (
-          hostname.includes("dev") ||
-          hostname.includes("test") ||
-          hostname.includes("tst") ||
-          hostname.includes("k8S-d0")
+          exceptionHosts.some((h) => hostname.includes(h)) ||
+          exceptionServices.some((s) => serviceName.includes(s))
         ) {
           continue;
         } else if (
