@@ -2,8 +2,17 @@ import "dotenv/config";
 import { chromium } from "playwright";
 import axios from "axios";
 import { CONFIG } from "./config.js";
+import { Pool } from "pg";
 
 const PROFILE_DIR = "./checkmk-profile";
+
+const pool = new Pool({
+  host: "127.0.0.1",
+  port: 5432,
+  user: CONFIG.DB_USER,
+  password: CONFIG.DB_PASSWORD,
+  database: "checkmk_db",
+});
 
 function parseDowntimeToMinutes(downtimeStr) {
   if (!downtimeStr) return 0;
@@ -60,7 +69,18 @@ function parseDowntimeToMinutes(downtimeStr) {
       hour: "2-digit",
       minute: "2-digit",
     });
+
+    async function getExceptions() {
+      try {
+        const result = await pool.query("SELECT * FROM exceptions");
+        console.log(result.rows);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
     try {
+      getExceptions();
       const dashletLocator = page
         .frameLocator('iframe[name="main"]')
         .frameLocator("iframe#dashlet_iframe_0");
