@@ -97,24 +97,14 @@ function parseDowntimeToMinutes(downtimeStr) {
 
       console.log("Pobieram dane z DB o wyjątkach (exceptions)...");
 
-      const db_exceptions_hosts = await pool.query(`
-  SELECT *
-  FROM exceptions
-  WHERE host IS NOT NULL
-    AND host <> ''
-`);
-      const exceptionHosts = db_exceptions_hosts.rows.map((r) => r.host);
+      const db_exceptions = await pool.query(`SELECT * FROM exceptions`);
+      const exceptions = db_exceptions.rows;
 
-      const db_exceptions_services = await pool.query(`
-  SELECT *
-  FROM exceptions
-  WHERE service IS NOT NULL
-  AND service <> ''
-  `);
+      // [ { host: 'dev', service: '' }, { host: '', service: 'filesystem' }, { host: 'dev', service: 'filesystem' } ]
 
-      const exceptionServices = db_exceptions_services.rows.map(
-        (r) => r.service,
-      );
+      const hostOnly = exceptions.filter((r) => r.host && !r.service);
+      const serviceOnly = exceptions.filter((r) => !r.host && r.service);
+      const hostAndService = exceptions.filter((r) => r.host && r.service);
 
       for (let i = 0; i < crits; i++) {
         const row = critRows.nth(i);
@@ -157,8 +147,11 @@ function parseDowntimeToMinutes(downtimeStr) {
         // hostname.includes("k8S-d0")
 
         if (
-          exceptionHosts.some((h) => hostname.includes(h)) ||
-          exceptionServices.some((s) => serviceName.includes(s))
+          hostOnly.some((r) => hostname.includes(r.host)) ||
+          serviceOnly.some((r) => serviceName.includes(r.service)) ||
+          hostAndService.some(
+            (r) => hostname.includes(r.host) && serviceName.includes(r.service),
+          )
         ) {
           continue;
         } else if (
