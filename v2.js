@@ -181,7 +181,8 @@ function parseDowntimeToMinutes(downtimeStr) {
             downTime,
             hostnameLink,
             serviceLink,
-            ...(matchedRule.send_info && { info: CONFIG.info }),
+            ...(matchedRule.send_info &&
+              matchedRule.info && { info: matchedRule.info || CONFIG.info }),
           });
         }
       }
