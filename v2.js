@@ -92,7 +92,7 @@ function parseDowntimeToMinutes(downtimeStr) {
       const crits = await critRows.count();
       const critsPKO = await critRowsPKO.count();
       console.log(
-        ` ########## 🔍 Sprawdzenie  o godzinie: ${nowFormatted} Liczba CRIT'ów: ${crits + critsPKO} ##########`,
+        ` ########## 🔍 Sprawdzenie  o godzinie: ${nowFormatted} UTC ########## Liczba CRIT'ów: ${crits + critsPKO} ##########`,
       );
 
       console.log("Pobieram dane z DB o wyjątkach (exceptions)...");
