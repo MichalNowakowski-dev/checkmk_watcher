@@ -113,39 +113,20 @@ function parseDowntimeToMinutes(downtimeStr) {
         const hostname = await row
           .locator("td:nth-child(2) span.host")
           .textContent();
-        const hostHref = await row
-          .locator("td:nth-child(2) a")
-          .getAttribute("href");
         const ipv4 = await row.locator("td:nth-child(3)").textContent();
         const serviceName = await row
-          .locator("td:nth-child(4) a")
+          .locator("td:nth-child(4) a.popup_trigger")
           .textContent();
-        const serviceHref = await row
-          .locator("td:nth-child(4) a")
-          .getAttribute("href");
+
         const summary = await row.locator("td:nth-child(6)").textContent();
         const downTime = await row.locator("td:nth-child(7)").textContent();
 
         const downtimeMin = parseDowntimeToMinutes(downTime);
 
-        const hostnameLink = `${CONFIG.checkmkBaseUrl}${hostHref}`;
-        const serviceLink = `${CONFIG.checkmkBaseUrl}${serviceHref}`;
-
         // Logi dla nas w konsoli
         console.log(
           `⚠️ CRIT: ${hostname} / ${serviceName} / czas: ${downTime}`,
         );
-
-        // RULES
-
-        // 1. Czas awarii powyżej 'CONFIG.downTimeMinutes'
-        // 2. Czas awarii ponizej 'CONFIG.downTimeMaxMinutes'
-        // 3. Hostname nie zawiera dev, test, tst, k8S-d0 w nazwie
-
-        //         hostname.includes("dev") ||
-        // hostname.includes("test") ||
-        // hostname.includes("tst") ||
-        // hostname.includes("k8S-d0")
 
         if (
           hostOnly.some((r) => hostname.includes(r.host)) ||
@@ -179,8 +160,6 @@ function parseDowntimeToMinutes(downtimeStr) {
             serviceName,
             summary,
             downTime,
-            hostnameLink,
-            serviceLink,
             ...(matchedRule.send_info &&
               matchedRule.info && { info: matchedRule.info || CONFIG.info }),
           });
@@ -194,7 +173,7 @@ function parseDowntimeToMinutes(downtimeStr) {
           .textContent();
         const ipv4 = await row.locator("td:nth-child(3)").textContent();
         const serviceName = await row
-          .locator("td:nth-child(4) a")
+          .locator("td:nth-child(4) a.popup_trigger")
           .textContent();
         const summary = await row.locator("td:nth-child(6)").textContent();
         const downTime = await row.locator("td:nth-child(7)").textContent();
