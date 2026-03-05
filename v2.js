@@ -115,7 +115,7 @@ function parseDowntimeToMinutes(downtimeStr) {
           .textContent();
         const ipv4 = await row.locator("td:nth-child(3)").textContent();
         const serviceName = await row
-          .locator("td:nth-child(4) a.popup_trigger")
+          .locator("td:nth-child(4) a")
           .textContent();
 
         const summary = await row.locator("td:nth-child(6)").textContent();
@@ -171,12 +171,11 @@ function parseDowntimeToMinutes(downtimeStr) {
         const hostname = await row
           .locator("td:nth-child(2) span.host")
           .textContent();
-        const ipv4 = await row.locator("td:nth-child(3)").textContent();
         const serviceName = await row
-          .locator("td:nth-child(4) a.popup_trigger")
+          .locator("td:nth-child(3) a")
           .textContent();
-        const summary = await row.locator("td:nth-child(6)").textContent();
-        const downTime = await row.locator("td:nth-child(7)").textContent();
+        const summary = await row.locator("td:nth-child(5)").textContent();
+        const downTime = await row.locator("td:nth-child(6)").textContent();
 
         const downtimeMin = parseDowntimeToMinutes(downTime);
 
