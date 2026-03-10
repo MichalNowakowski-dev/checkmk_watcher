@@ -191,7 +191,6 @@ function parseDowntimeToMinutes(downtimeStr) {
 
           await axios.post(CONFIG.slackUrl, {
             hostname,
-            ipv4,
             serviceName,
             summary,
             downTime,
