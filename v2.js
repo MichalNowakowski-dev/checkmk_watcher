@@ -42,6 +42,11 @@ function parseDowntimeToMinutes(downtimeStr) {
   // 1️⃣ Launch persistent context (przechowuje cookies, localStorage)
   const context = await chromium.launchPersistentContext(PROFILE_DIR, {
     headless: true,
+    args: [
+      "--no-sandbox",
+      "--disable-dev-shm-usage", // zapobiega crashom przy małej pamięci
+      "--disable-gpu",
+    ],
   });
   const page = await context.newPage();
 
@@ -58,9 +63,16 @@ function parseDowntimeToMinutes(downtimeStr) {
     // czekamy, aż nie będziemy już na loginie
     await page.waitForURL((url) => !url.toString().includes("login"));
     console.log("✅ Login zakończony");
+    console.log("🟢 Monitoring uruchomiony");
   }
 
-  console.log("🟢 Monitoring uruchomiony");
+  // ✅ Graceful shutdown
+  process.on("SIGTERM", async () => {
+    console.log("🛑 Zamykanie...");
+    await context.close();
+    await pool.end();
+    process.exit(0);
+  });
 
   // 3️⃣ Funkcja sprawdzająca krytyki
   const checkCrits = async () => {
